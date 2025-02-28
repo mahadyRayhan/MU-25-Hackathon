@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot with Question Tree</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        /* --- Universal Styles --- */
+        html {
+            box-sizing: border-box;
+            /* Apply border-box to the html element */
+        }
+
+        *,
+        *:before,
+        *:after {
+            box-sizing: inherit;
+            /* Inherit box-sizing to all elements */
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            /* Still using viewport height, but now with border-box */
+            display: flex;
+            overflow: hidden;
+            /* Keep overflow hidden */
+            background-color: #e0f7fa;
+            color: #333;
+        }
+
+        h2,
+        h3 {
+            color: #2c3e50;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        /* --- Left Panel (Emotion Classifier) --- */
+        #left-panel {
+            width: 25%;
+            background-color: #f8f8f8;
+            padding: 20px;
+            border-right: 2px solid #d3e0e9;
+            height: 100%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            margin-top: 0;
+            color: #34495e;
+            border-bottom: 2px solid #d3e0e9;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        #status {
+            margin-top: 10px;
+            color: #555;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+        }
+
+        #image-container {
+            margin-top: 10px;
+            border: 2px solid #d3e0e9;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #image-header {
+            background-color: #eaf2f8;
+            color: #34495e;
+            padding: 10px;
+            text-align: center;
+            width: 100%;
+            border-bottom: 2px solid #d3e0e9;
+        }
+
+        #default-image {
+            width: 80%;
+            height: 180px;
+            display: block;
+            object-fit: contain;
+            margin: 15px 0;
+        }
+
+        #emo_confirm_QA {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        #emo_confirm_QA p {
+            color: #85640a;
+            margin-bottom: 10px;
+        }
+
+        /* --- Center Panel (Video & Chat) --- */
+        #center-panel {
+            width: 40%;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            border-right: 2px solid #d3e0e9;
+            padding: 20px;
+        }
+
+        #video-container {
+            width: 100%;
+            border-bottom: 2px solid #d3e0e9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+        }
+
+        #video-header {
+            padding: 10px;
+            background-color: #eaf2f8;
+            color: #34495e;
+            text-align: center;
+            width: 100%;
+            border-bottom: 2px solid #d3e0e9;
+        }
+
+        #video-display,
+        #video-placeholder {
+            width: 90%;
+            max-height: 250px;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border-radius: 8px;
+            margin-top: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #chat-container {
+            flex: 1;
+            /* Ensure chat container takes remaining vertical space */
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 20px;
+        }
+
+        #input-container {
+            padding: 15px;
+            border-top: 2px solid #d3e0e9;
+            display: flex;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            /* height: auto; */
+            /* Remove fixed or percentage height that might cause overflow */
+            /* min-height: 0; */
+            /* Ensure it can shrink if necessary */
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d3e0e9;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 12px 18px;
+            border-radius: 20px;
+            max-width: 80%;
+            clear: both;
+        }
+
+        .user-message {
+            background-color: #cce5ff;
+            align-self: flex-end;
+            margin-left: auto;
+            color: #084298;
+            float: right;
+        }
+
+        .bot-message {
+            background-color: #e0e0e0;
+            align-self: flex-start;
+            margin-right: auto;
+            color: #333;
+            float: left;
+        }
+
+
+        /* --- Right Panel (Question Tree) --- */
+        #right-panel {
+            width: 35%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        #tree-header {
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-bottom: 2px solid #d3e0e9;
+        }
+
+        #tree-container,
+        #json-tree-container {
+            flex: 1;
+            background-color: #fdfdfd;
+            overflow-y: auto;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 15px;
+        }
+
+        /* --- JSON Tree View Styling Enhancements --- */
+        #json-tree-container {
+            font-family: monospace;
+            font-size: 15px;
+            padding: 15px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .json-object,
+        .json-array {
+            margin-left: 15px;
+            padding-left: 10px;
+            border-left: 1px dotted #ccc;
+        }
+
+        .json-key {
+            font-weight: bold;
+            color: #4a6572;
+        }
+
+        .json-value {
+            color: #2e86c1;
+        }
+
+        .json-toggle {
+            cursor: pointer;
+            margin-right: 5px;
+            user-select: none;
+        }
+
+        .json-toggle::before {
+            content: "\25B6";
+            display: inline-block;
+            margin-right: 4px;
+            color: #777;
+        }
+
+        .json-toggle.collapsed::before {
+            content: "\25BC";
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="left-panel">
+        <h2 class="panel-title">Emotion Classifier</h2>
+        <div id="status">
+            <p> <strong>Current Emotion: </strong> <span id="emotion"><strong>Neutral</strong></span></p>
+        </div>
+        <div id="image-container">
+            <div id="image-header">
+                Webcam Viewer
+            </div>
+            <img id="default-image" src="placeholder-image.png" alt="Webcam Image">
+        </div>
+        <div id="emo_confirm_QA" style="display: none;">
+            <p>It looks like you are confused. Would you like more detailed explanation?</p>
+            <button id="confused-send-btn">Ask Details</button>
+        </div>
+
+    </div>
+
+    <div id="center-panel">
+        <div id="video-container">
+            <div id="video-header">Video Feed</div>
+            <video id="video-display" autoplay playsinline loop muted src="SD_intro.mp4"></video>
+            <canvas id="video-canvas" style="display:none;"></canvas>
+            <img id="video-placeholder" src="placeholder-video.png" alt="Video Placeholder" style="display:none;">
+        </div>
+        <div id="chat-container">
+        </div>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Ask a question...">
+            <button id="main-send-btn">Send</button>
+        </div>
+    </div>
+
+    <div id="right-panel">
+        <div id="tree-header">
+            <h2 class="panel-title">Question Tree (JSON View)</h2>
+        </div>
+        <div id="tree-container" style="display:none;"></div>
+        <div id="json-tree-container">
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+
+            // Get references to elements
+            const emotionSpan = document.getElementById('emotion');
+            const emoConfirmQASection = document.getElementById('emo_confirm_QA');
+            const confusedSendButton = $("#confused-send-btn"); // Correctly select button inside emo_confirm_QA
+            const chatContainer = $("#chat-container");
+            const jsonTreeContainer = $("#json-tree-container");
+            const defaultImage = document.getElementById('default-image');
+
+
+            // Function to check emotion and toggle visibility
+            function checkEmotion() {
+                const currentEmotion = emotionSpan.textContent.trim().toLowerCase();
+                console.log("Current Emotion:", currentEmotion); // Log the emotion value
+
+                if (currentEmotion === 'confused') {
+                    console.log("Emotion is confused - showing confused.jpg"); // Log when 'confused' branch is taken
+                    emoConfirmQASection.style.display = 'block';
+                    defaultImage.src = 'confused.jpg';
+                } else if (currentEmotion === 'normal') {
+                    console.log("Emotion is normal - showing placeholder-image.png"); // Log when 'normal' branch is taken
+                    emoConfirmQASection.style.display = 'none';
+                    defaultImage.src = 'placeholder-image.png';
+                } else {
+                    console.log("Emotion is neither confused nor normal (or error) - showing placeholder-image.png"); // Log 'else' branch
+                    emoConfirmQASection.style.display = 'none';
+                    defaultImage.src = 'placeholder-image.png';
+                }
+            }
+
+            // --- Send question functionality for main input ---
+            $("#main-send-btn").click(function () { // Changed selector to main-send-btn
+                const query = $("#user-input").val();
+                if (query) {
+                    // Display user message in chat container immediately
+                    chatContainer.append(`<div class="message user-message">${query}</div>`);
+                    $("#user-input").val(''); // Clear input field
+
+                    $.ajax({
+                        url: "/ask", // Your Flask server endpoint for asking questions
+                        type: "GET",
+                        data: {
+                            query: query
+                        },
+                        dataType: "json", // Expect JSON response
+                        success: function (response) {
+                            console.log("Full server response:", response);
+                            if (response && response.answer) {
+                                chatContainer.append(`<div class="message bot-message">${response.answer}</div>`);
+                                chatContainer.scrollTop(chatContainer[0].scrollHeight);
+                                jsonTreeContainer.empty();
+                                updateJsonTreeView(); // Update JSON tree view after each question
+                            } else {
+                                chatContainer.append(`<div class="message bot-message">Sorry, I couldn't get an answer. Please try again.</div>`);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            // Handle errors (e.g., server error)
+                            console.error("Error asking question:", error);
+                            chatContainer.append(`<div class="message bot-message">Error: Could not communicate with the server.</div>`);
+                        }
+                    });
+                } else {
+                    alert("Please enter a question.");
+                }
+            });
+
+            // Handle Enter key press in main input field
+            $("#user-input").keypress(function (event) {
+                if (event.key === "Enter") {
+                    $("#main-send-btn").click(); // Trigger the main send button click event
+                    return false; // Prevent default form submission if inside a form
+                }
+            });
+
+            // --- Send "confused" feedback functionality ---
+            confusedSendButton.click(function () { // Event listener for the confused "Send" button
+                const lastQuestion = $(".user-message").last().text(); // Get text of last user message
+                const emotion = "confused";
+
+                if (lastQuestion) {
+                    $.ajax({
+                        url: "/send_confused_query", //  Flask endpoint for confused queries
+                        type: "POST", // Use POST to send data in the request body
+                        contentType: 'application/json', // Specify content type as JSON
+                        data: JSON.stringify({
+                            question: lastQuestion,
+                            emotion: emotion
+                        }), // Serialize data to JSON
+                        dataType: "json", // Expect JSON response (optional, for handling server response)
+                        //  success: function(response) {
+                        //      console.log("Confused query sent successfully:", response);
+                        //      emoConfirmQASection.style.display = 'none'; // Hide the emo_confirm_QA section after sending
+                        //  },
+                        success: function (response) {
+                            console.log("Full server response:", response);
+                            if (response && response.answer) {
+                                chatContainer.append(`<div class="message bot-message">${response.answer}</div>`);
+                                chatContainer.scrollTop(chatContainer[0].scrollHeight);
+                            } else {
+                                chatContainer.append(`<div class="message bot-message">Sorry, I couldn't get an answer. Please try again.</div>`);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error sending confused query:", error);
+                            alert("Error sending confused feedback."); // Error message for user (optional)
+                        }
+                    });
+                } else {
+                    alert("No question to send feedback for."); // If no user question is found
+                }
+            });
+
+
+            // --- Function to load and render JSON Tree ---
+            function updateJsonTreeView() {
+                $.getJSON("QA_viz.json", function (data) { // Changed to QA_viz.json
+
+                    function renderJson(jsonData, container) {
+                        if (typeof jsonData === 'object' && jsonData !== null) {
+                            const isArray = Array.isArray(jsonData);
+                            const list = $(isArray ? '<ul></ul>' : '<div></div>').addClass(isArray ? 'json-array' : 'json-object');
+                            for (const key in jsonData) {
+
+                                if (jsonData.hasOwnProperty(key)) {
+                                    if (key === 'id' || key === 'answer') continue; // Skip rendering "id"
+                                    const value = jsonData[key];
+                                    const listItem = $('<li></li>');
+                                    if (typeof value === 'object' && value !== null) {
+                                        const displayKey = key === 'children' ? 'sub questions' : key; // Choose 'related questions' if preferred
+                                        if (key === 'children' && (!Array.isArray(value) || value.length === 0)) {
+                                            continue; // Skip "children" if it's an empty array
+                                        }
+                                        const toggle = $('<span></span>').addClass('json-toggle').on('click', function () {
+                                            $(this).toggleClass('collapsed').next('.json-object, .json-array').toggleClass('hidden');
+                                        });
+                                        listItem.append(toggle);
+                                        listItem.append(`<span class="json-key">${displayKey}:</span>`);
+                                        const valueContainer = $('<div></div>');
+                                        renderJson(value, valueContainer); // Recursive call for nested objects/arrays
+                                        listItem.append(valueContainer);
+                                    } else {
+                                        listItem.append(`<span class="json-key">${key}:</span> <span class="json-value">"${value}"</span>`); // Assuming string values need quotes
+                                    }
+                                    list.append(listItem);
+                                }
+                            }
+                            container.append(list);
+                        } else {
+                            container.text(jsonData); // For primitive values (though unlikely at top level)
+                        }
+                    }
+                    renderJson(data, jsonTreeContainer); // Start rendering the JSON data
+
+                }).fail(function (jqxhr, textStatus, error) {
+                    var err = textStatus + ", " + error;
+                    jsonTreeContainer.html("Error loading QA_viz.json: " + err); // Updated error message to QA_viz.json
+                    console.error("Request Failed: " + err);
+                });
+            }
+
+            // --- Fetch current emotion from server ---
+
+            function fetchEmotion() {
+                console.log("fetchEmotion function called");
+                $.ajax({
+                    url: "/get_current_emotion",
+                    type: "GET",
+                    dataType: "json",
+                    success: function (response) {
+                        console.log("AJAX Success - Response:", response);
+                        if (response && response.emotion) {
+                            console.log("Emotion Value:", response.emotion);
+                            $("#emotion").text(response.emotion);
+                            console.log("UI Updated with:", response.emotion);
+                            checkEmotion(); // Call checkEmotion AFTER updating the emotion in the UI
+                        } else {
+                            console.log("Error: Invalid or missing emotion in response:", response);
+                            $("#emotion").text("Error fetching emotion");
+                            checkEmotion(); // Call checkEmotion even in error case to ensure correct visibility
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error - Status:", status, "Error:", error);
+                        $("#emotion").text("Error");
+                        checkEmotion(); // Call checkEmotion even in error case to ensure correct visibility
+                    }
+                });
+            }
+
+            // --- Set interval to update emotion every 2 seconds (adjust as needed) ---
+            setInterval(fetchEmotion, 10000); // Call fetchEmotion every 10000 milliseconds (10 seconds) - Adjusted interval to 10 seconds
+
+            // Initial call to fetch emotion when page loads (optional - if you want emotion to show immediately)
+            fetchEmotion();
+            updateJsonTreeView(); // Initial call to load JSON tree view
+        });
+    </script>
+</body>
+
+</html>

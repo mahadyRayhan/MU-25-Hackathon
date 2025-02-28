@@ -1,0 +1,15 @@
+[
+    {
+        "id": "ee5b2b68-acfd-4f2f-84d8-e09440dfb8fe",
+        "question": "what is software development?",
+        "answer": "<!DOCTYPE html>\n<html>\n<head>\n<title>What is Software Development?</title>\n</head>\n<body>\n  <p>Hi there! Software development is like building with code!  It's all about creating computer programs and apps.  Think of it as designing and building instructions for a computer to follow.  These instructions can do all sorts of things, from running games to helping doctors diagnose illnesses!</p>\n</body>\n</html>\n\n",
+        "children": [
+            {
+                "id": "1ae0b46d-5704-4d51-b069-dae2c37a211a",
+                "question": "what is web based software?",
+                "answer": "<!DOCTYPE html>\n<html>\n<head>\n<title>What is Web-Based Software?</title>\n</head>\n<body>\n  <p>Hey there! Web-based software is like a program you use through your web browser, like Chrome or Firefox.  You don't need to download anything special to your computer \u2013 you just need an internet connection!  Think of online games, email, or even Google Docs \u2013 those are all examples of web-based software.</p>\n</body>\n</html>\n\n",
+                "children": []
+            }
+        ]
+    }
+]
