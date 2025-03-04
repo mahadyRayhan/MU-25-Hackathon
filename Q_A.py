@@ -111,6 +111,20 @@ class GeminiQuestion_and_Answering:
                 **Answer:**"""
             )
             
+            # prompt = (
+            #     f"""You are an AI-based assistant designed to help students. Your goal is to provide **clear, engaging, and friendly** answers based on the provided documents about traffic signs and their descriptions.
+
+            #     **Instructions:**
+            #     - **Keep things simple, short and easy to understand**
+            #     - **If you don’t have the answer**, say:
+            #     *"I’m here to help with traffic sign questions! But it looks like I don’t have enough information to answer this one. Let me know if you’d like to try a different question!"*
+            #     - formate your reply in HTML formate, that can be displayed in the browser. I do not need the questionas as title.
+
+            #     **Question:** {query}
+
+            #     **Answer:**"""
+            # )
+            
         #----------------------------------- original prompt -----------------------------------
         # prompt = (
         #         f"""You are an AI-based assistant designed to help students, including neurodiverse learners, in a Virtual Reality (VR) learning environment. Your goal is to provide **clear, engaging, and friendly** answers based on the provided software development documents. 

@@ -283,4 +283,4 @@ def send_confused_query():
 if __name__ == "__main__":
     
     print("HTML file created. Starting the server...")
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5001)
